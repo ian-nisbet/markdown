@@ -104,7 +104,8 @@ class MarkdownServiceProvider extends ServiceProvider
      */
     public function registerMarkdownFinder()
     {
-        $this->app['markdown.finder'] = $this->app->share(function ($app) {
+        // $this->app['markdown.finder'] = $this->app->share(function ($app) {
+        $this->app->singleton('markdown.finder', function ($app) {
             $paths = Config::get('markdown.paths');
 
             foreach ($paths as $key => $path) {
@@ -124,7 +125,8 @@ class MarkdownServiceProvider extends ServiceProvider
     {
         $me = $this;
 
-        $this->app['markdown'] = $this->app->share(function ($app) use ($me) {
+        // $this->app['markdown'] = $this->app->share(function ($app) use ($me) {
+        $this->app->singleton('markdown', function ($app) use ($me) {
             $resolver = $app['markdown.engine.resolver'];
 
             $finder = $app['markdown.finder'];
