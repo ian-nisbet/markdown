@@ -13,7 +13,8 @@ use Illuminate\View\Engines\EngineResolver;
 use Illuminate\View\FileViewFinder;
 use VTalbot\Markdown\Compilers\MarkdownCompiler;
 
-class MarkdownServiceProvider extends ServiceProvider {
+class MarkdownServiceProvider extends ServiceProvider
+{
 
     /**
      * Register the service provider.
@@ -41,17 +42,13 @@ class MarkdownServiceProvider extends ServiceProvider {
      */
     public function registerRoutes()
     {
-        if (Config::get('markdown.add_routes'))
-        {
-            foreach (Config::get('markdown.routes') as $routes)
-            {
-                foreach (Config::get('markdown.extensions') as $ext)
-                {
-                    Route::get($routes.'{file}.'.$ext, function($file) use ($routes)
-                        {
-                            $markdown = Markdown::make($routes.$file);
-                            return Response::make($markdown, 200, array('Content-Type' => 'text/html'));
-                        })->where('file', '.*');
+        if (Config::get('markdown.add_routes')) {
+            foreach (Config::get('markdown.routes') as $routes) {
+                foreach (Config::get('markdown.extensions') as $ext) {
+                    Route::get($routes.'{file}.'.$ext, function ($file) use ($routes) {
+                        $markdown = Markdown::make($routes.$file);
+                        return Response::make($markdown, 200, array('Content-Type' => 'text/html'));
+                    })->where('file', '.*');
                 }
             }
         }
@@ -66,13 +63,13 @@ class MarkdownServiceProvider extends ServiceProvider {
     {
         list($me, $app) = array($this, $this->app);
 
-        $app['markdown.engine.resolver'] = $app->share(function($app) use ($me)
-            {
-                $resolver = new EngineResolver;
-                $me->registerMarkdownEngine($resolver);
+        // $app['markdown.engine.resolver'] = $app->share(function($app) use ($me)
+        $app->singleton('markdown.engine.resolver', function ($app) use ($me) {
+            $resolver = new EngineResolver;
+            $me->registerMarkdownEngine($resolver);
 
-                return $resolver;
-            });
+            return $resolver;
+        });
     }
 
     /**
@@ -85,21 +82,19 @@ class MarkdownServiceProvider extends ServiceProvider {
     {
         $app = $this->app;
 
-        $resolver->register('markdown', function() use ($app)
-            {
-                $cache = storage_path().'/markdown';
+        $resolver->register('markdown', function () use ($app) {
+            $cache = storage_path().'/markdown';
 
-                if ( ! File::isDirectory($cache))
-                {
-                    File::makeDirectory($cache);
-                }
+            if (! File::isDirectory($cache)) {
+                File::makeDirectory($cache);
+            }
 
-                $compiler = new MarkdownCompiler($app['files'], $cache);
+            $compiler = new MarkdownCompiler($app['files'], $cache);
 
-                $compiler->setOptions(Config::get('markdown.options'));
+            $compiler->setOptions(Config::get('markdown.options'));
 
-                return new CompilerEngine($compiler, $app['files']);
-            });
+            return new CompilerEngine($compiler, $app['files']);
+        });
     }
 
     /**
@@ -109,17 +104,15 @@ class MarkdownServiceProvider extends ServiceProvider {
      */
     public function registerMarkdownFinder()
     {
-        $this->app['markdown.finder'] = $this->app->share(function($app)
-            {
-                $paths = Config::get('markdown.paths');
+        $this->app['markdown.finder'] = $this->app->share(function ($app) {
+            $paths = Config::get('markdown.paths');
 
-                foreach ($paths as $key => $path)
-                {
-                    $paths[$key] = app_path().$path;
-                }
+            foreach ($paths as $key => $path) {
+                $paths[$key] = app_path().$path;
+            }
 
-                return new FileViewFinder($app['files'], $paths, array('markdown', 'md'));
-            });
+            return new FileViewFinder($app['files'], $paths, array('markdown', 'md'));
+        });
     }
 
     /**
@@ -131,22 +124,20 @@ class MarkdownServiceProvider extends ServiceProvider {
     {
         $me = $this;
 
-        $this->app['markdown'] = $this->app->share(function($app) use ($me)
-            {
-                $resolver = $app['markdown.engine.resolver'];
+        $this->app['markdown'] = $this->app->share(function ($app) use ($me) {
+            $resolver = $app['markdown.engine.resolver'];
 
-                $finder = $app['markdown.finder'];
+            $finder = $app['markdown.finder'];
 
-                $events = $app['events'];
+            $events = $app['events'];
 
-                $environment = new Environment($resolver, $finder, $events);
+            $environment = new Environment($resolver, $finder, $events);
 
-                $environment->setContainer($app);
+            $environment->setContainer($app);
 
-                $environment->share('app', $app);
+            $environment->share('app', $app);
 
-                return $environment;
-            });
+            return $environment;
+        });
     }
-
 }
